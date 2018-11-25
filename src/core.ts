@@ -1,6 +1,8 @@
-import { IAddEventMessage, IBindingContainer, IClarityActivateErrorState, IClarityDuplicatedEventState, ICompressedBatchMessage,
-  IEnvelope, IEvent, IEventArray, IEventBindingPair, IEventData, IInstrumentationEventState, IMissingFeatureEventState,
-  Instrumentation, IPayload, IPlugin, ITimestampedWorkerMessage, ITriggerState, State, WorkerMessageType } from "../types/index";
+import {
+  IAddEventMessage, IBindingContainer, IClarityActivateErrorState, IClarityDuplicatedEventState, ICompressedBatchMessage,
+  IEnvelope, IEvent, IEventArray, IEventBindingPair, IEventData, IInstrumentationEventState, IMarkEventState, IMissingFeatureEventState,
+  Instrumentation, IPayload, IPlugin, ITimestampedWorkerMessage, ITriggerState, State, WorkerMessageType
+} from "../types/index";
 import compress from "./compress";
 import { createCompressionWorker } from "./compressionworker";
 import { config } from "./config";
@@ -10,9 +12,10 @@ import getPlugin from "./plugins";
 import { enqueuePayload, flushPayloadQueue, resetUploads, upload } from "./upload";
 import { getCookie, getEventId, guid, isNumber, setCookie } from "./utils";
 
-export const version = "0.2.4";
+export const version = "0.2.5";
 export const ClarityAttribute = "clarity-iid";
 export const InstrumentationEventName = "Instrumentation";
+const MarkEventName = "Mark";
 const Cookie = "ClarityID";
 
 let startTime: number;
@@ -175,7 +178,14 @@ export function getTimestamp(unix?: boolean, raw?: boolean) {
 
 export function instrument(eventState: IInstrumentationEventState) {
   if (config.instrument) {
-    addEvent({type: InstrumentationEventName, state: eventState});
+    addEvent({ type: InstrumentationEventName, state: eventState });
+  }
+}
+
+export function mark(key: string, info: any) {
+  if (state === State.Activated) {
+    const markState: IMarkEventState = { key, info };
+    addEvent({ type: MarkEventName, state: markState });
   }
 }
 
